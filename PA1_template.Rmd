@@ -8,18 +8,116 @@ output:
 
 ## Loading and preprocessing the data
 
+First use read.csv to read the data into a data frame, and convert the date from a factor variable to a Date variable.
+
+```{r loadData,cache=TRUE}
+stepData <- read.csv("activity.csv", header=TRUE)
+str(stepData)
+stepData$date <- as.Date(stepData$date, format = "%Y-%m-%d")
+str(stepData)
+```
 
 
 ## What is mean total number of steps taken per day?
 
+Use the dplyr package to calculate the total number of steps for each day
+and then make a histogram of the results
+```{r message=FALSE}
+library(dplyr)
+stepsPerDay <- stepData %>% group_by(date) %>% summarise_each(funs(sum), steps)
+barplot(stepsPerDay$steps, names.arg = stepsPerDay$date)
+```
 
+Now calculate the mean number of steps each day and the median number of steps each day.
+
+```{r utilityFunctions, echo=FALSE, cache=TRUE}
+# This chunk contains useful utility functions
+#
+# The myround function was Written by Carl Broman (https://gist.github.com/kbroman/5217617)
+# and deals with sprintf("%.2f", ...) returning -0.00
+# see https://twitter.com/hspter/status/314858331598626816
+myround <- function(..., dig=2) {
+  g <- sprintf(paste0("%.", dig, "f"), ...)
+  z <- paste0("0.", paste(rep("0", dig), collapse=""))
+  g[g==paste0("-",z)] <- z
+  g
+}
+```
+
+```{r dependson="utilityFunctions"}
+meanSteps <- mean(stepsPerDay$steps, na.rm = TRUE)
+medianSteps <- median(stepsPerDay$steps, na.rm = TRUE)
+```
+
+
+The mean number of steps per day = `r myround(meanSteps, 2) ` and the median number of steps per day = `r medianSteps`
 
 ## What is the average daily activity pattern?
 
+```{r cache=TRUE}
+library(lattice)
+intervalMeanData <- stepData %>% group_by(interval) 
+intervalMeanData <- intervalMeanData %>% summarise_each(funs(mean(.,na.rm = TRUE)), steps)
+xyplot(steps ~ interval, data = intervalMeanData,
+         type = "l",
+         xlab = "Interval",
+         ylab = "Number of Steps")
+maxInterval <- intervalMeanData %>% top_n(steps,n=1)
+maxInterval
+```
 
+There 5 minute interval at `r maxInterval$interval` contains the maximum number of steps (`r maxInterval$steps`) on average, across all the days in the dataset.
 
 ## Imputing missing values
 
+```{r}
+summary(stepData)
+head(stepData)
+head(intervalMeanData)
+```
 
+As shown above, there are `r length(which(is.na(stepData$steps)))` missing (NA) values in the dataset.  Each of the missing NA values will be replaced by the average for the given time interval.  The average values for each time interval are contined in the intervalMeanData dataset.
+
+```{r}
+modifiedStepData <- stepData
+for (i in 1:nrow(modifiedStepData)){
+  if (is.na(modifiedStepData$steps[i])) {
+    desiredInterval <- modifiedStepData$interval[i]
+    newStepsValue <- intervalMeanData$steps[intervalMeanData$interval == desiredInterval]
+    modifiedStepData$steps[i] <- newStepsValue
+  }
+}
+summary(modifiedStepData)
+head(modifiedStepData)
+```
+
+```{r message=FALSE}
+library(dplyr)
+modifiedStepsPerDay <- modifiedStepData %>% group_by(date) %>% summarise_each(funs(sum), steps)
+barplot(modifiedStepsPerDay$steps, names.arg = modifiedStepsPerDay$date)
+```
+
+```{r dependson="utilityFunctions"}
+modifiedMeanSteps <- mean(modifiedStepsPerDay$steps, na.rm = TRUE)
+modifiedMedianSteps <- median(modifiedStepsPerDay$steps, na.rm = TRUE)
+```
+
+
+After replacing all NA values with the mean value for the appropriate time interval, the mean number of steps per day = `r myround(modifiedMeanSteps, 2) ` and the median number of steps per day = `r myround(modifiedMedianSteps, 2)`
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+We create a factor variable (dayType) which identifies each day as a weekday or weekend and then plot the total number of steps versus the time interval for weekdays and weekends.
+
+```{r}
+library(lattice)
+summaryData <- stepData
+summaryData$dayType <- as.factor(c("weekend","weekday","weekday","weekday","weekday","weekday","weekend")
+                                 [as.POSIXlt(summaryData$date)$wday + 1])
+activityPattern <- summaryData %>% group_by(dayType, interval) %>% summarise_each(funs(sum(.,na.rm = TRUE)), steps)
+xyplot(steps ~ interval | dayType, data = activityPattern,
+         layout = c(1,2), stack = TRUE, type = "l",
+         xlab = "Interval",
+         ylab = "Number of Steps")
+```
+
