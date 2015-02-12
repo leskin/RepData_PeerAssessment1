@@ -48,7 +48,7 @@ hist(stepsPerDay$steps, breaks = 25, xlab = "Total Steps Per Day",
 
 ```r
 # Note that we were asked to create a histogram, but if we wanted to make a bargraph instead, 
-# the follosing command would do so:
+# the following command would do so:
 # barplot(stepsPerDay$steps, names.arg = stepsPerDay$date)
 ```
 
@@ -138,6 +138,7 @@ summary(modifiedStepData)
 ##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0
 ```
 
+We now plot the histogram for the total number of steps per day for the dataset where missing values have been replaced and compare it to the histogram for the oringal dataset.
 
 ```r
 library(dplyr)
@@ -150,7 +151,7 @@ hist(modifiedStepsPerDay$steps, breaks = 25, xlab = "Total Steps Per Day",
 
 ```r
 # Note that we were asked to create a histogram, but if we wanted to make a bargraph instead, 
-# the follosing command would do so:
+# the following command would do so:
 # barplot(modifiedStepsPerDay$steps, names.arg = modifiedStepsPerDay$date)
 ```
 Note that by imputing the missing values, the shape of the distribution does not significantly change, but the frequency of the maximum number of steps per day does significantly increase.
