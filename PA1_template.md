@@ -3,7 +3,7 @@
 
 ## Loading and preprocessing the data
 
-First use read.csv to read the data into a data frame, and convert the date from a factor variable to a Date variable.
+We first use read.csv to read the data into a data frame, and convert the date from a factor variable to a Date variable.
 
 
 ```r
@@ -34,19 +34,25 @@ str(stepData)
 ## What is mean total number of steps taken per day?
 
 Use the dplyr package to calculate the total number of steps for each day
-and then make a histogram of the results
+and then make a histogram of the results.  We ignore any missing data values for this plot.
+
 
 ```r
 library(dplyr)
 stepsPerDay <- stepData %>% group_by(date) %>% summarise_each(funs(sum), steps)
-barplot(stepsPerDay$steps, names.arg = stepsPerDay$date)
+hist(stepsPerDay$steps, breaks = 25, xlab = "Total Steps Per Day", 
+     main = "Histogram of Total Steps per Day (ignoring missing values)")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-1-1.png) 
 
-Now calculate the mean number of steps each day and the median number of steps each day.
+```r
+# Note that we were asked to create a histogram, but if we wanted to make a bargraph instead, 
+# the follosing command would do so:
+# barplot(stepsPerDay$steps, names.arg = stepsPerDay$date)
+```
 
-
+Next we calculate the mean number of steps each day and the median number of steps each day and report the results.
 
 
 ```r
@@ -54,10 +60,11 @@ meanSteps <- mean(stepsPerDay$steps, na.rm = TRUE)
 medianSteps <- median(stepsPerDay$steps, na.rm = TRUE)
 ```
 
-
 The mean number of steps per day = 10766.19 and the median number of steps per day = 10765
 
 ## What is the average daily activity pattern?
+
+We are interested in the daily activity pattern, so we plot the average number of steps taken during each 5-minute interval reported, averaged across all days.  We also calculate and report the 5-minute interval that contains the maximum number of steps taken, on average across all the days in the dataset.
 
 
 ```r
@@ -84,9 +91,11 @@ maxInterval
 ## 1      835 206.1698
 ```
 
-There 5 minute interval at 835 contains the maximum number of steps (206.1698113) on average, across all the days in the dataset.
+The 5-minute interval at 835 contains the maximum number of steps (206.1698113) on average, across all the days in the dataset.
 
 ## Imputing missing values
+
+The dataset contains missing values (coded as NA).  These can introduce bias into some calculations or summaries of the data. First we use the summary command to list which variables have missing values.
 
 
 ```r
@@ -104,37 +113,7 @@ summary(stepData)
 ##  NA's   :2304
 ```
 
-```r
-head(stepData)
-```
-
-```
-##   steps       date interval
-## 1    NA 2012-10-01        0
-## 2    NA 2012-10-01        5
-## 3    NA 2012-10-01       10
-## 4    NA 2012-10-01       15
-## 5    NA 2012-10-01       20
-## 6    NA 2012-10-01       25
-```
-
-```r
-head(intervalMeanData)
-```
-
-```
-## Source: local data frame [6 x 2]
-## 
-##   interval     steps
-## 1        0 1.7169811
-## 2        5 0.3396226
-## 3       10 0.1320755
-## 4       15 0.1509434
-## 5       20 0.0754717
-## 6       25 2.0943396
-```
-
-As shown above, there are 2304 missing (NA) values in the dataset.  Each of the missing NA values will be replaced by the average for the given time interval.  The average values for each time interval are contined in the intervalMeanData dataset.
+As shown above, there are 2304 missing (NA) values in the dataset for the number of steps in a 5-minute interval.  Each of the missing NA values will be replaced by the mean for the given time interval.  The mean values for each time interval are contined in the intervalMeanData data frame.  A new data frame (modifiedStepData) is created which is equal to the original dataset but with the missing data filled in.  We use the summary command on the new data frame to confirm that all missing data has been replaced (and we see that no NA values are reported for the new dataset).
 
 
 ```r
@@ -159,54 +138,48 @@ summary(modifiedStepData)
 ##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0
 ```
 
-```r
-head(modifiedStepData)
-```
-
-```
-##       steps       date interval
-## 1 1.7169811 2012-10-01        0
-## 2 0.3396226 2012-10-01        5
-## 3 0.1320755 2012-10-01       10
-## 4 0.1509434 2012-10-01       15
-## 5 0.0754717 2012-10-01       20
-## 6 2.0943396 2012-10-01       25
-```
-
 
 ```r
 library(dplyr)
 modifiedStepsPerDay <- modifiedStepData %>% group_by(date) %>% summarise_each(funs(sum), steps)
-barplot(modifiedStepsPerDay$steps, names.arg = modifiedStepsPerDay$date)
+hist(modifiedStepsPerDay$steps, breaks = 25, xlab = "Total Steps Per Day",
+     main = "Histogram of Total Steps per Day (imputing missing values)")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
 
+```r
+# Note that we were asked to create a histogram, but if we wanted to make a bargraph instead, 
+# the follosing command would do so:
+# barplot(modifiedStepsPerDay$steps, names.arg = modifiedStepsPerDay$date)
+```
+Note that by imputing the missing values, the shape of the distribution does not significantly change, but the frequency of the maximum number of steps per day does significantly increase.
 
 ```r
-modifiedMeanSteps <- mean(modifiedStepsPerDay$steps, na.rm = TRUE)
-modifiedMedianSteps <- median(modifiedStepsPerDay$steps, na.rm = TRUE)
+modifiedMeanSteps <- mean(modifiedStepsPerDay$steps)
+modifiedMedianSteps <- median(modifiedStepsPerDay$steps)
 ```
 
 
-After replacing all NA values with the mean value for the appropriate time interval, the mean number of steps per day = 10766.19 and the median number of steps per day = 10766.19
+After replacing all NA values with the mean value for the appropriate time interval, the mean number of steps per day = 10766.19 and the median number of steps per day = 10766.19. So we see that the mean and the median values are now equal, which makes sense because we replaced missing values with mean values for each time interval.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-We create a factor variable (dayType) which identifies each day as a weekday or weekend and then plot the total number of steps versus the time interval for weekdays and weekends.
+The next task is to look for a difference in activity pattern between weekdays and weekend days.  We create a new factor variable (dayType) that identifies each day as a weekday or weekend day. We then plot the average number of steps taken for each time interval, averaged across all weekday days and weekend days.
 
 
 ```r
 library(lattice)
-summaryData <- stepData
+summaryData <- modifiedStepData
 summaryData$dayType <- as.factor(c("weekend","weekday","weekday","weekday","weekday","weekday","weekend")
                                  [as.POSIXlt(summaryData$date)$wday + 1])
-activityPattern <- summaryData %>% group_by(dayType, interval) %>% summarise_each(funs(sum(.,na.rm = TRUE)), steps)
+activityPattern <- summaryData %>% group_by(dayType, interval) %>% summarise_each(funs(mean), steps)
 xyplot(steps ~ interval | dayType, data = activityPattern,
          layout = c(1,2), stack = TRUE, type = "l",
          xlab = "Interval",
-         ylab = "Number of Steps")
+         ylab = "Average Number of Steps")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
 
+These plots clearly show that there is a difference in activity pattern between weekday days and weekend days.  The average number of steps during each 5-minute time interval is more uniform during the day for weekend days, and the larger number of steps per time period is focused more during the morning (from about 5 AM to 10 AM) for weekday days.  The people also appear to start walking earlier on weekday days than they do on weekend days.
